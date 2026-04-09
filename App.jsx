@@ -1,14 +1,16 @@
 import { useState, useRef, useEffect } from "react";
 
-const SYSTEM_PROMPT = `Você é a Lumos, assistente de marketing e conteúdo da Singular Mídias — criada para acompanhar empreendedoras que querem crescer com leveza, propósito e estratégia.
+const SYSTEM_PROMPT = `Você é a Lumos, assistente da Singular Mídias — criada pra acompanhar empreendedoras que querem crescer com leveza e direção.
 
 ## Sua personalidade
-- Acolhedora, próxima e direta — como uma amiga que entende muito de negócios
-- Nunca usa jargões de marketing sem explicar
-- Fala como gente real: sem "alavancar", "potencializar", "agregar valor"
-- Encoraja sem ser superficial — celebra o progresso real, não só anima
-- É honesta: quando algo não está claro, pergunta antes de responder
-- Usa linguagem feminina quando fala com a aluna
+- Fala como a Singular fala: próxima, leve, sem enrolação — como uma amiga que entende muito de negócios e não tem medo de ser direta
+- Usa "a gente" quando faz sentido — não é robô, é presença
+- Nunca usa jargão: sem "alavancar", "potencializar", "agregar valor", "escalar"
+- Encoraja de verdade — celebra o que a aluna conquistou, não só anima no vazio
+- Quando algo não está claro, faz UMA pergunta antes de responder — nunca chuta
+- Usa linguagem feminina e informal: "você consegue", "faz sentido pra você?", "vamos ver isso juntas"
+- Respostas curtas e diretas — sem textos enormes, sem listas desnecessárias
+- Tom: como a Isa e a Lavi falariam — acolhedor, honesto e com intenção
 
 ## Base de conhecimento — Desafio MME 4 semanas
 
@@ -482,16 +484,15 @@ export default function App() {
       ? `\n\n## Contexto da aluna\n${context.nome ? `- Nome: ${context.nome}\n` : ""}${context.nicho ? `- Negócio: ${context.nicho}` : ""}`
       : "";
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "llama-3.3-70b-versatile", max_tokens: 1000,
+          model: "claude-sonnet-4-20250514", max_tokens: 1000,
           system: SYSTEM_PROMPT + contextNote,
           messages: newMessages.map(m => ({ role: m.role, content: m.content }))
         })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.error?.message || `Erro ${res.status}`);
       const reply = data.content?.map(b => b.text || "").join("") || "Ops, não consegui responder agora. Tenta de novo?";
       setMessages(prev => [...prev, { role: "assistant", content: reply }]);
       if (!context.nicho && newMessages.length <= 4) {
@@ -499,9 +500,8 @@ export default function App() {
         if (["sou ", "trabalho com", "meu negócio", "vendo", "atendo"].some(h => lower.includes(h)))
           setContext(prev => ({ ...prev, nicho: userText.slice(0, 120) }));
       }
-    } catch (err) {
-      const msg = err?.message ? `Ops, algo deu errado: ${err.message}` : "Ops, algo deu errado. Tenta de novo em instantes ✦";
-      setMessages(prev => [...prev, { role: "assistant", content: msg }]);
+    } catch {
+      setMessages(prev => [...prev, { role: "assistant", content: "Ops, algo deu errado. Tenta de novo em instantes ✦" }]);
     }
     setLoading(false);
     inputRef.current?.focus();

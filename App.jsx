@@ -484,15 +484,16 @@ export default function App() {
       ? `\n\n## Contexto da aluna\n${context.nome ? `- Nome: ${context.nome}\n` : ""}${context.nicho ? `- Negócio: ${context.nicho}` : ""}`
       : "";
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("/api/chat", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514", max_tokens: 1000,
+          model: "llama-3.3-70b-versatile", max_tokens: 1000,
           system: SYSTEM_PROMPT + contextNote,
           messages: newMessages.map(m => ({ role: m.role, content: m.content }))
         })
       });
       const data = await res.json();
+      if (!res.ok) throw new Error(data?.error?.message || `Erro ${res.status}`);
       const reply = data.content?.map(b => b.text || "").join("") || "Ops, não consegui responder agora. Tenta de novo?";
       setMessages(prev => [...prev, { role: "assistant", content: reply }]);
       if (!context.nicho && newMessages.length <= 4) {
@@ -500,8 +501,9 @@ export default function App() {
         if (["sou ", "trabalho com", "meu negócio", "vendo", "atendo"].some(h => lower.includes(h)))
           setContext(prev => ({ ...prev, nicho: userText.slice(0, 120) }));
       }
-    } catch {
-      setMessages(prev => [...prev, { role: "assistant", content: "Ops, algo deu errado. Tenta de novo em instantes ✦" }]);
+    } catch (err) {
+      const msg = err?.message ? `Ops, algo deu errado: ${err.message}` : "Ops, algo deu errado. Tenta de novo em instantes ✦";
+      setMessages(prev => [...prev, { role: "assistant", content: msg }]);
     }
     setLoading(false);
     inputRef.current?.focus();

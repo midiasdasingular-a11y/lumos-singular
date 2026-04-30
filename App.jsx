@@ -462,15 +462,21 @@ function ModulePanel({ module, onSendPrompt, onClose }) {
 }
 
 export default function App() {
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("lumos_messages")) || []; } catch { return []; }
+  });
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [context, setContext] = useState({ nicho: "", nome: "" });
+  const [context, setContext] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("lumos_context")) || { nicho: "", nome: "" }; } catch { return { nicho: "", nome: "" }; }
+  });
   const [showContext, setShowContext] = useState(false);
   const [activeModule, setActiveModule] = useState(null);
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
 
+  useEffect(() => { localStorage.setItem("lumos_messages", JSON.stringify(messages)); }, [messages]);
+  useEffect(() => { localStorage.setItem("lumos_context", JSON.stringify(context)); }, [context]);
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
 
   const sendMessage = async (text) => {
@@ -533,7 +539,7 @@ export default function App() {
             color: context.nicho ? "#C4B5FD" : "#57534E"
           }}>{context.nicho ? "✦ contexto salvo" : "＋ contexto"}</button>
           {messages.length > 0 && (
-            <button onClick={() => { setMessages([]); setContext({ nicho: "", nome: "" }); }} style={{
+            <button onClick={() => { setMessages([]); setContext({ nicho: "", nome: "" }); localStorage.removeItem("lumos_messages"); localStorage.removeItem("lumos_context"); }} style={{
               background: "transparent", border: "1px solid #2C2927", borderRadius: 6,
               padding: "6px 10px", cursor: "pointer", fontFamily: "'DM Sans',sans-serif", fontSize: 11, color: "#57534E"
             }}>Nova conversa</button>

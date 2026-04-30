@@ -501,7 +501,9 @@ export default function App() {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error?.message || `Erro ${res.status}`);
       const reply = data.content?.map(b => b.text || "").join("") || "Ops, não consegui responder agora. Tenta de novo?";
-      setMessages(prev => [...prev, { role: "assistant", content: reply }]);
+      const updatedMessages = [...newMessages, { role: "assistant", content: reply }];
+      setMessages(updatedMessages);
+      localStorage.setItem("lumos_messages", JSON.stringify(updatedMessages));
       if (!context.nicho && newMessages.length <= 4) {
         const lower = userText.toLowerCase();
         if (["sou ", "trabalho com", "meu negócio", "vendo", "atendo"].some(h => lower.includes(h)))
